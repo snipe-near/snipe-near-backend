@@ -20,7 +20,7 @@ const main = async () => {
 	server.use(bodyParser.json())
 
 	server.get('/', (req, res) => {
-		res.send('ok')
+		res.send('ok gan')
 	})
 
 	server.post('/snipes', async (req, res) => {
