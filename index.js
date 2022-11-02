@@ -6,7 +6,8 @@ const main = async () => {
 		res.send('Hello world')
 	})
 
-	server.listen(9090)
+	const port = process.env.PORT || 5000
+	server.listen(port)
 }
 
 main()
