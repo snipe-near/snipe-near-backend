@@ -3,6 +3,24 @@ class Service {
 		this.repo = repo
 	}
 
+	async _watchListingActivity(activity) {}
+
+	async processActivites(activities) {
+		const session = await this.repo.createSessionTransaction()
+		try {
+			session.startTransaction()
+
+			await this.repo.insertActivitiesWithSessin(session, activities)
+
+			await this.repo.commitTransaction(session)
+		} catch (error) {
+			await this.repo.abortTransaction(session)
+			throw error
+		} finally {
+			await this.repo.endSession(session)
+		}
+	}
+
 	async snipe(body) {
 		console.log({ body })
 		return {
