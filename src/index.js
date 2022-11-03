@@ -1,10 +1,12 @@
 require('dotenv').config()
 const express = require('express')
 const bodyParser = require('body-parser')
+const Queue = require('bull')
 const Cache = require('./helpers/Cache')
 const Database = require('./helpers/Database')
 const Repository = require('./Repository')
 const Service = require('./Service')
+const configs = require('./config/configs')
 
 const main = async () => {
 	const database = new Database()
@@ -12,12 +14,20 @@ const main = async () => {
 	const cache = new Cache()
 	await cache.init()
 
+	const indexerQueue = new Queue('indexer', configs.redisUrl)
+
 	const repository = new Repository(database, cache)
 	const service = new Service(repository)
 
 	const server = express()
 	server.use(bodyParser.urlencoded({ extended: true }))
 	server.use(bodyParser.json())
+
+	indexerQueue.process(async (job, done) => {
+		const activites = job.data.activities
+		await service.processActivites(activites)
+		done()
+	})
 
 	server.get('/', (req, res) => {
 		res.send('ok')
@@ -95,9 +105,8 @@ const main = async () => {
 		}
 	})
 
-	const port = process.env.PORT || 5000
-	server.listen(port)
-	console.log('App is running on port: ', port)
+	server.listen(configs.port)
+	console.log('App is running on port: ', configs.port)
 }
 
 main()
