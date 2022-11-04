@@ -1,4 +1,5 @@
 const { validateSnipe } = require('./validator')
+const snipeTokenEmailTemplate = require('./email-templates/emailToken')
 
 class Service {
 	constructor(repo, mail) {
@@ -24,7 +25,7 @@ class Service {
 		}
 	}
 
-	async sendEmail(to, subject, html) {
+	async _sendEmail(to, subject, html) {
 		await this.mail.mailgunTransport.sendMail(
 			{
 				from: '"Snipe Near" <no-reply@snipenear.xyz>',
@@ -34,7 +35,8 @@ class Service {
 			},
 			(error, info) => {
 				if (error) {
-					throw err
+					console.log(error)
+					throw error
 				} else {
 					console.log(`Email sent: ${to} ${info.id}`)
 				}
@@ -42,12 +44,17 @@ class Service {
 		)
 	}
 
+	async _sendEmailTokenSniped(toEmail, price, imgUrl, mySnipeUrl, marketplaceUrl) {
+		const subject = 'Snipe Near - Token'
+		const template = snipeTokenEmailTemplate(price, imgUrl, mySnipeUrl, marketplaceUrl)
+		await this.sendEmail(toEmail, subject, template)
+	}
+
 	async snipe(accountId, body) {
 		await validateSnipe.validate(body, {
 			strict: true,
 		})
 
-		// await this.sendEmail('hafizjoundys@gmail.com', 'TEST SNIPE NEAR', 'BODY EMAIL')
 		//TODO validate contract
 		await this.repo.createSnipe({
 			accountId,
