@@ -24,7 +24,6 @@ class Service {
 		}
 	}
 
-<<<<<<< HEAD
 	async sendEmail(to, subject, html) {
 		await this.mail.mailgunTransport.sendMail(
 			{
@@ -43,17 +42,12 @@ class Service {
 		)
 	}
 
-=======
->>>>>>> 93069e8
 	async snipe(accountId, body) {
 		await validateSnipe.validate(body, {
 			strict: true,
 		})
 
-<<<<<<< HEAD
 		// await this.sendEmail('hafizjoundys@gmail.com', 'TEST SNIPE NEAR', 'BODY EMAIL')
-=======
->>>>>>> 93069e8
 		//TODO validate contract
 		await this.repo.createSnipe({
 			accountId,
