@@ -123,6 +123,10 @@ class Service {
 					emailNotification: body.settings.emailNotification || null,
 					enablePushNotification: body.settings.enablePushNotification || false,
 				},
+				metadata: {
+					title: body.metadata.title || null,
+					media: body.metadata.media || null,
+				},
 			},
 			status: snipeStatusEnum.waiting,
 			createdAt: new Date().getTime(),

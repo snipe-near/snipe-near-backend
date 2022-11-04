@@ -12,5 +12,12 @@ module.exports = {
 				enablePushNotification: yup.boolean().optional(),
 			})
 			.required(),
+		metadata: yup
+			.object()
+			.shape({
+				title: yup.string().optional(),
+				media: yup.string().optional(),
+			})
+			.optional(),
 	}),
 }
