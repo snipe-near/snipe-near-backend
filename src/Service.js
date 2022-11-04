@@ -1,4 +1,5 @@
 const { validateSnipe } = require('./validator')
+const { utils } = require('near-api-js')
 const snipeTokenEmailTemplate = require('./email-templates/emailToken')
 
 class Service {
@@ -58,9 +59,20 @@ class Service {
 		//TODO validate contract
 		await this.repo.createSnipe({
 			accountId,
-			...body,
+			...{
+				contractId: body.contractId,
+				tokenId: body.tokenId,
+				price: body.price,
+				settings: {
+					emailNotification: body.settings.emailNotification || null,
+					enablePushNotification: body.settings.enablePushNotification || false,
+				},
+			},
 			createdAt: new Date().getTime(),
 			updatedAt: null,
+			_meta: {
+				formatNearAmount: parseFloat(utils.format.formatNearAmount(body.price)),
+			},
 		})
 	}
 
@@ -85,8 +97,19 @@ class Service {
 
 		// TOOD validate contract
 		await this.repo.updateSnipe(accountId, id, {
-			...body,
+			...{
+				contractId: body.contractId,
+				tokenId: body.tokenId,
+				price: body.price,
+				settings: {
+					emailNotification: body.settings.emailNotification || null,
+					enablePushNotification: body.settings.enablePushNotification || false,
+				},
+			},
 			updatedAt: new Date().getTime(),
+			_meta: {
+				formatNearAmount: parseFloat(utils.format.formatNearAmount(body.price)),
+			},
 		})
 	}
 
