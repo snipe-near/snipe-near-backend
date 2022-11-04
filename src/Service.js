@@ -69,8 +69,6 @@ class Service {
 			parseFloat(utils.format.formatNearAmount(activity.data.price))
 		)
 
-		console.log({ snipes })
-
 		await this.repo.setSnipesStatusWithSession(
 			session,
 			snipes.map((snipe) => snipe._id),
@@ -84,6 +82,10 @@ class Service {
 
 	async _sendNotification(snipe) {
 		if (!snipe.settings.emailNotification) return
+		// TODO get token image
+		// TODO get marketplace url by receiverId
+		// TODO get my snipe url
+
 		this._sendEmailTokenSniped(
 			snipe.settings.emailNotification,
 			snipe._meta.formatNearAmount,
