@@ -111,6 +111,28 @@ class Repository {
 			{ session }
 		)
 	}
+
+	async addSubscriptiondWebPushNotificationToAccount(accountId, subscription) {
+		await this.db.mongo.collection('accounts').updateOne(
+			{
+				accountId: accountId,
+			},
+			{
+				$addToSet: {
+					webPushSubcriptions: subscription,
+				},
+			},
+			{
+				upsert: true,
+			}
+		)
+	}
+
+	async getAccountByAccountId(accountId) {
+		return await this.db.mongo.collection('accounts').findOne({
+			accountId,
+		})
+	}
 }
 
 module.exports = Repository

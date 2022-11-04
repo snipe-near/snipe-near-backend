@@ -28,6 +28,7 @@
 		"nodemailer": "^6.8.0",
 		"nodemailer-mailgun-transport": "^2.1.5",
 		"tweetnacl": "^1.0.3",
+		"web-push": "^3.5.0",
 		"yup": "^0.32.11"
 	}
 }

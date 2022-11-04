@@ -11,4 +11,8 @@ module.exports = {
 		apiKey: process.env.MAILGUN_API_KEY,
 		domain: process.env.MAILGUN_DOMAIN,
 	},
+	VAPIdKeys: {
+		publicKey: process.env.VAPID_PUBLIC_KEY,
+		privateKey: process.env.VAPID_PRIVATE_KEY,
+	},
 }

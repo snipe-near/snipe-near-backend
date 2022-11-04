@@ -20,4 +20,15 @@ module.exports = {
 			})
 			.optional(),
 	}),
+	validateSubscribeWebPushNotification: yup.object().shape({
+		endpoint: yup.string().required(),
+		expirationTime: yup.string().nullable(),
+		keys: yup
+			.object()
+			.shape({
+				p256dh: yup.string().required(),
+				auth: yup.string().required(),
+			})
+			.required(),
+	}),
 }

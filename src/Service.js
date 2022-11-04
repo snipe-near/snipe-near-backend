@@ -1,13 +1,14 @@
-const { validateSnipe } = require('./validator')
+const { validateSnipe, validateSubscribeWebPushNotification } = require('./validator')
 const { utils } = require('near-api-js')
 const snipeTokenEmailTemplate = require('./email-templates/emailToken')
 const { snipeStatusEnum, activityTypeEnum } = require('./enums')
 
 class Service {
-	constructor(repo, mail, snipeQueue) {
+	constructor(repo, mail, snipeQueue, webPush) {
 		this.repo = repo
 		this.mail = mail
 		this.snipeQueue = snipeQueue
+		this.webPush = webPush
 	}
 
 	async processActivites(activities) {
@@ -176,6 +177,22 @@ class Service {
 
 	async deleteSnipe(accountId, id) {
 		await this.repo.deleteSnipe(accountId, id)
+	}
+
+	async subscribeWebPushNotification(accountId, subscription) {
+		await validateSubscribeWebPushNotification.validate(subscription, {
+			strict: true,
+		})
+		await this.repo.addSubscriptiondWebPushNotificationToAccount(accountId, subscription)
+	}
+
+	async _sendWebPushNotification(accountId, payload) {
+		const account = await this.repo.getAccountByAccountId(accountId)
+		if (!account) return
+
+		for (const subscription of account.webPushSubcriptions) {
+			this.webPush.sendNotification(subscription, JSON.stringify(payload))
+		}
 	}
 }
 

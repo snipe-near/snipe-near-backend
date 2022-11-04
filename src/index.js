@@ -10,6 +10,7 @@ const configs = require('./config/configs')
 const Near = require('./helpers/Near')
 const authorizeNear = require('./middleware/authorize-near')
 const Mail = require('./helpers/Mail')
+const WebPush = require('./helpers/Web-push')
 
 const main = async () => {
 	const database = new Database()
@@ -19,12 +20,14 @@ const main = async () => {
 	const near = new Near()
 	const mail = new Mail()
 	await mail.init()
+	const webPush = new WebPush()
+	await webPush.init()
 
 	const indexerQueue = new Queue('indexer', configs.redisUrl)
 	const snipeQueue = new Queue('snipe', configs.redisUrl)
 
 	const repository = new Repository(database, cache)
-	const service = new Service(repository, mail, snipeQueue)
+	const service = new Service(repository, mail, snipeQueue, webPush)
 
 	const server = express()
 	server.use(bodyParser.urlencoded({ extended: true }))
@@ -120,6 +123,30 @@ const main = async () => {
 				message: message,
 			})
 		}
+	})
+
+	server.post('/subscribe-web-push-notification', authorizeNear(near), async (req, res) => {
+		try {
+			const accountId = req.account_id
+			const subscription = req.body
+
+			await service.subscribeWebPushNotification(accountId, subscription)
+			res.json({
+				status: 1,
+			})
+		} catch (error) {
+			const message = error.message || err
+			res.status(500).json({
+				status: 0,
+				message: message,
+			})
+		}
+	})
+
+	server.get('/test-send-notif', async (req, res) => {
+		const payload = { title: 'HELLO' }
+		await service._sendWebPushNotification('kangmalu.testnet', payload)
+		res.send('ok')
 	})
 
 	server.listen(configs.port)
