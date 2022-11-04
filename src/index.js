@@ -9,6 +9,7 @@ const Service = require('./Service')
 const configs = require('./config/configs')
 const Near = require('./helpers/Near')
 const authorizeNear = require('./middleware/authorize-near')
+const Mail = require('./helpers/Mail')
 
 const main = async () => {
 	const database = new Database()
@@ -16,11 +17,13 @@ const main = async () => {
 	const cache = new Cache()
 	await cache.init()
 	const near = new Near()
+	const mail = new Mail()
+	await mail.init()
 
 	const indexerQueue = new Queue('indexer', configs.redisUrl)
 
 	const repository = new Repository(database, cache)
-	const service = new Service(repository)
+	const service = new Service(repository, mail)
 
 	const server = express()
 	server.use(bodyParser.urlencoded({ extended: true }))
@@ -32,7 +35,7 @@ const main = async () => {
 		done()
 	})
 
-	server.get('/', (req, res) => {
+	server.get('/', (_, res) => {
 		res.send('ok gan')
 	})
 
