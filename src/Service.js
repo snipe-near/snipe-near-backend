@@ -55,15 +55,15 @@ class Service {
 		await this._sendEmail(toEmail, subject, template)
 	}
 
-	async _getSnipesBelowOrEqualPrice(contractId, tokenId, price) {
+	async _getSnipesGreaterOrEqualPrice(contractId, tokenId, price) {
 		//TODO search snipes by collection
-		return await this.repo.getSnipesBelowOrEqualPrice(contractId, tokenId, price)
+		return await this.repo.getSnipesGreaterOrEqualPrice(contractId, tokenId, price)
 	}
 
 	async _watchListingActivity(session, activity) {
 		if (activity.type !== activityTypeEnum.listing) return
 
-		const snipes = await this._getSnipesBelowOrEqualPrice(
+		const snipes = await this._getSnipesGreaterOrEqualPrice(
 			activity.data.nftContractId,
 			activity.data.tokenId,
 			parseFloat(utils.format.formatNearAmount(activity.data.price))

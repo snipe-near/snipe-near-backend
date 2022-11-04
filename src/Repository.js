@@ -70,7 +70,7 @@ class Repository {
 	}
 
 	// exact nft (contractId, tokenId) not a collection
-	async getSnipesBelowOrEqualPrice(contractId, tokenId, price) {
+	async getSnipesGreaterOrEqualPrice(contractId, tokenId, price) {
 		return await this.snipesDb
 			.find({
 				contractId,
