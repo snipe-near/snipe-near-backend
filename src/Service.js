@@ -1,3 +1,5 @@
+const { validateSnipe } = require('./validator')
+
 class Service {
 	constructor(repo) {
 		this.repo = repo
@@ -10,7 +12,7 @@ class Service {
 		try {
 			session.startTransaction()
 
-			await this.repo.insertActivitiesWithSessin(session, activities)
+			await this.repo.insertActivitiesWithSession(session, activities)
 
 			await this.repo.commitTransaction(session)
 		} catch (error) {
@@ -22,31 +24,47 @@ class Service {
 	}
 
 	async snipe(accountId, body) {
-		console.log({ body })
-		return {
-			foo: 1,
-		}
+		await validateSnipe.validate(body, {
+			strict: true,
+		})
+
+		//TODO validate contract
+		await this.repo.createSnipe({
+			accountId,
+			...body,
+			createdAt: new Date().getTime(),
+			updatedAt: null,
+		})
 	}
 
-	async getSnipes(skip = 0, limit = 30) {
-		console.log({ skip, limit })
+	async getSnipes(accountId, skip = 0, limit = 30) {
+		const [results, count] = await Promise.all([
+			this.repo.getSnipes(accountId, skip, limit),
+			this.repo.countSnipe(accountId),
+		])
+
 		return {
-			foo: 1,
+			data: results,
+			count,
+			skip,
+			limit,
 		}
 	}
 
 	async updateSnipe(accountId, id, body) {
-		console.log({ id, body })
-		return {
-			foo: 1,
-		}
+		await validateSnipe.validate(body, {
+			strict: true,
+		})
+
+		// TOOD validate contract
+		await this.repo.updateSnipe(accountId, id, {
+			...body,
+			updatedAt: new Date().getTime(),
+		})
 	}
 
 	async deleteSnipe(accountId, id) {
-		console.log({ id })
-		return {
-			foo: 1,
-		}
+		await this.repo.deleteSnipe(accountId, id)
 	}
 }
 
