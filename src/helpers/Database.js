@@ -13,7 +13,7 @@ class Database {
 	async init() {
 		try {
 			await this.mongoClient.connect()
-			this.mongo = this.mongoClient.db(process.env.DB_NAME_MARKETPLACE)
+			this.mongo = this.mongoClient.db(configs.dbName)
 			if (process.env.NODE_ENV === 'development') {
 				Logger.setLevel('debug')
 			}

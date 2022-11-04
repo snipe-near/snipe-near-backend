@@ -1,16 +1,23 @@
 require('dotenv').config()
 const express = require('express')
 const bodyParser = require('body-parser')
+const Queue = require('bull')
 const Cache = require('./helpers/Cache')
 const Database = require('./helpers/Database')
 const Repository = require('./Repository')
 const Service = require('./Service')
+const configs = require('./config/configs')
+const Near = require('./helpers/Near')
+const authorizeNear = require('./middleware/authorize-near')
 
 const main = async () => {
 	const database = new Database()
 	await database.init()
 	const cache = new Cache()
 	await cache.init()
+	const near = new Near()
+
+	const indexerQueue = new Queue('indexer', configs.redisUrl)
 
 	const repository = new Repository(database, cache)
 	const service = new Service(repository)
@@ -19,14 +26,21 @@ const main = async () => {
 	server.use(bodyParser.urlencoded({ extended: true }))
 	server.use(bodyParser.json())
 
+	indexerQueue.process(async (job, done) => {
+		const activites = job.data.activities
+		await service.processActivites(activites)
+		done()
+	})
+
 	server.get('/', (req, res) => {
 		res.send('ok gan')
 	})
 
-	server.post('/snipes', async (req, res) => {
+	server.post('/snipes', authorizeNear(near), async (req, res) => {
 		try {
+			const accountId = req.account_id
 			const snipeData = req.body
-			await service.snipe(snipeData)
+			await service.snipe(accountId, snipeData)
 
 			res.json({
 				status: 1,
@@ -40,13 +54,14 @@ const main = async () => {
 		}
 	})
 
-	server.get('/snipes', async (req, res) => {
+	server.get('/snipes', authorizeNear(near), async (req, res) => {
 		try {
+			const accountId = req.account_id
 			let { skip, limit } = req.query
 			skip = parseInt(skip) || 0
 			limit = Math.min(parseInt(limit), 30) || 30
 
-			const results = await service.getSnipes(skip, limit)
+			const results = await service.getSnipes(accountId, skip, limit)
 			res.json({
 				status: 1,
 				data: results,
@@ -60,12 +75,13 @@ const main = async () => {
 		}
 	})
 
-	server.put('/snipes/:snipeId', async (req, res) => {
+	server.put('/snipes/:snipeId', authorizeNear(near), async (req, res) => {
 		try {
+			const accountId = req.account_id
 			const snipeId = req.params.snipeId
 			const snipeData = req.body
 
-			await service.updateSnipe(snipeId, snipeData)
+			await service.updateSnipe(accountId, snipeId, snipeData)
 			res.json({
 				status: 1,
 			})
@@ -78,11 +94,12 @@ const main = async () => {
 		}
 	})
 
-	server.delete('/snipes/:snipeId', async (req, res) => {
+	server.delete('/snipes/:snipeId', authorizeNear(near), async (req, res) => {
 		try {
+			const accountId = req.account_id
 			const snipeId = req.params.snipeId
 
-			await service.deleteSnipe(snipeId)
+			await service.deleteSnipe(accountId, snipeId)
 			res.json({
 				status: 1,
 			})
@@ -95,9 +112,8 @@ const main = async () => {
 		}
 	})
 
-	const port = process.env.PORT || 5000
-	server.listen(port)
-	console.log('App is running on port: ', port)
+	server.listen(configs.port)
+	console.log('App is running on port: ', configs.port)
 }
 
 main()
