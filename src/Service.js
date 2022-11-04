@@ -127,6 +127,7 @@ class Service {
 					emailNotification: body.settings.emailNotification || null,
 					enablePushNotification: body.settings.enablePushNotification || false,
 				},
+				// TODO move metadata to _meta & get value from view contract
 				metadata: {
 					title: body.metadata.title || null,
 					media: body.metadata.media || null,
