@@ -21,7 +21,7 @@ class Service {
 		}
 	}
 
-	async snipe(body) {
+	async snipe(accountId, body) {
 		console.log({ body })
 		return {
 			foo: 1,
@@ -35,14 +35,14 @@ class Service {
 		}
 	}
 
-	async updateSnipe(id, body) {
+	async updateSnipe(accountId, id, body) {
 		console.log({ id, body })
 		return {
 			foo: 1,
 		}
 	}
 
-	async deleteSnipe(id) {
+	async deleteSnipe(accountId, id) {
 		console.log({ id })
 		return {
 			foo: 1,

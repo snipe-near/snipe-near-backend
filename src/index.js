@@ -7,12 +7,15 @@ const Database = require('./helpers/Database')
 const Repository = require('./Repository')
 const Service = require('./Service')
 const configs = require('./config/configs')
+const Near = require('./helpers/Near')
+const authorizeNear = require('./middleware/authorize-near')
 
 const main = async () => {
 	const database = new Database()
 	await database.init()
 	const cache = new Cache()
 	await cache.init()
+	const near = new Near()
 
 	const indexerQueue = new Queue('indexer', configs.redisUrl)
 
@@ -33,10 +36,11 @@ const main = async () => {
 		res.send('ok')
 	})
 
-	server.post('/snipes', async (req, res) => {
+	server.post('/snipes', authorizeNear(near), async (req, res) => {
 		try {
+			const accountId = req.account_id
 			const snipeData = req.body
-			await service.snipe(snipeData)
+			await service.snipe(accountId, snipeData)
 
 			res.json({
 				status: 1,
@@ -50,7 +54,7 @@ const main = async () => {
 		}
 	})
 
-	server.get('/snipes', async (req, res) => {
+	server.get('/snipes', authorizeNear(near), async (req, res) => {
 		try {
 			let { skip, limit } = req.query
 			skip = parseInt(skip) || 0
@@ -70,12 +74,13 @@ const main = async () => {
 		}
 	})
 
-	server.put('/snipes/:snipeId', async (req, res) => {
+	server.put('/snipes/:snipeId', authorizeNear(near), async (req, res) => {
 		try {
+			const accountId = req.account_id
 			const snipeId = req.params.snipeId
 			const snipeData = req.body
 
-			await service.updateSnipe(snipeId, snipeData)
+			await service.updateSnipe(accountId, snipeId, snipeData)
 			res.json({
 				status: 1,
 			})
@@ -88,11 +93,12 @@ const main = async () => {
 		}
 	})
 
-	server.delete('/snipes/:snipeId', async (req, res) => {
+	server.delete('/snipes/:snipeId', authorizeNear(near), async (req, res) => {
 		try {
+			const accountId = req.account_id
 			const snipeId = req.params.snipeId
 
-			await service.deleteSnipe(snipeId)
+			await service.deleteSnipe(accountId, snipeId)
 			res.json({
 				status: 1,
 			})
