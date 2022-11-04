@@ -9,7 +9,10 @@ const Service = require('./Service')
 const configs = require('./config/configs')
 const Near = require('./helpers/Near')
 const authorizeNear = require('./middleware/authorize-near')
+<<<<<<< HEAD
 const Mail = require('./helpers/Mail')
+=======
+>>>>>>> 93069e8
 
 const main = async () => {
 	const database = new Database()
@@ -17,8 +20,11 @@ const main = async () => {
 	const cache = new Cache()
 	await cache.init()
 	const near = new Near()
+<<<<<<< HEAD
 	const mail = new Mail()
 	await mail.init()
+=======
+>>>>>>> 93069e8
 
 	const indexerQueue = new Queue('indexer', configs.redisUrl)
 
@@ -35,7 +41,11 @@ const main = async () => {
 		done()
 	})
 
+<<<<<<< HEAD
 	server.get('/', (_, res) => {
+=======
+	server.get('/', (req, res) => {
+>>>>>>> 93069e8
 		res.send('ok gan')
 	})
 

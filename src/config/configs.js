@@ -7,8 +7,11 @@ module.exports = {
 	mongoUrl: process.env.MONGO_URL,
 	dbName: process.env.DB_NAME,
 	nearConfig: getNearConfig(process.env.NODE_ENV || 'testnet'),
+<<<<<<< HEAD
 	mailGun: {
 		apiKey: process.env.MAILGUN_API_KEY,
 		domain: process.env.MAILGUN_DOMAIN,
 	},
+=======
+>>>>>>> 93069e8
 }
