@@ -45,7 +45,7 @@ class Service {
 	}
 
 	async _sendEmailTokenSniped(toEmail, price, imgUrl, mySnipeUrl, marketplaceUrl) {
-		const subject = 'Snipe Near - Token'
+		const subject = 'Hurry Up! Checkout your Token snipe now!'
 		const template = snipeTokenEmailTemplate(price, imgUrl, mySnipeUrl, marketplaceUrl)
 		await this.sendEmail(toEmail, subject, template)
 	}
