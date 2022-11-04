@@ -6,6 +6,7 @@ const snipeStatusEnum = Object.freeze({
 	waiting: 'waiting',
 	sniping: 'sniping',
 	success: 'success',
+	failed: 'failed',
 })
 
 module.exports = {

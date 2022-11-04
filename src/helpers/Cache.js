@@ -10,9 +10,9 @@ class Cache {
 	async init() {
 		try {
 			this.ready = true
-		} catch (err) {
-			console.log(err)
-			throw err
+		} catch (error) {
+			console.error(error)
+			throw error
 		}
 	}
 }

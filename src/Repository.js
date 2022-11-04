@@ -1,4 +1,5 @@
 const { ObjectId } = require('mongodb')
+const { snipeStatusEnum } = require('./enums')
 
 class Repository {
 	constructor(db, cache) {
@@ -66,6 +67,49 @@ class Repository {
 			_id: ObjectId(id),
 			accountId,
 		})
+	}
+
+	// exact nft (contractId, tokenId) not a collection
+	async getSnipesBelowOrEqualPrice(contractId, tokenId, price) {
+		return await this.snipesDb
+			.find({
+				contractId,
+				tokenId,
+				['_meta.formatNearAmount']: {
+					$gte: price,
+				},
+				status: snipeStatusEnum.waiting,
+			})
+			.toArray()
+	}
+
+	async setSnipeStatus(id, status) {
+		await this.snipesDb.updateOne(
+			{
+				_id: ObjectId(id),
+			},
+			{
+				$set: {
+					status,
+				},
+			}
+		)
+	}
+
+	async setSnipesStatusWithSession(session, objectIds, status) {
+		await this.snipesDb.updateMany(
+			{
+				_id: {
+					$in: objectIds,
+				},
+			},
+			{
+				$set: {
+					status,
+				},
+			},
+			{ session }
+		)
 	}
 }
 

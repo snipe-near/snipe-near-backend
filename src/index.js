@@ -21,9 +21,10 @@ const main = async () => {
 	await mail.init()
 
 	const indexerQueue = new Queue('indexer', configs.redisUrl)
+	const snipeQueue = new Queue('snipe', configs.redisUrl)
 
 	const repository = new Repository(database, cache)
-	const service = new Service(repository, mail)
+	const service = new Service(repository, mail, snipeQueue)
 
 	const server = express()
 	server.use(bodyParser.urlencoded({ extended: true }))
@@ -32,6 +33,12 @@ const main = async () => {
 	indexerQueue.process(async (job, done) => {
 		const activites = job.data.activities
 		await service.processActivites(activites)
+		done()
+	})
+
+	snipeQueue.process(async (job, done) => {
+		const snipe = job.data.snipe
+		await service.processSnipe(snipe)
 		done()
 	})
 
