@@ -56,11 +56,12 @@ const main = async () => {
 
 	server.get('/snipes', authorizeNear(near), async (req, res) => {
 		try {
+			const accountId = req.account_id
 			let { skip, limit } = req.query
 			skip = parseInt(skip) || 0
 			limit = Math.min(parseInt(limit), 30) || 30
 
-			const results = await service.getSnipes(skip, limit)
+			const results = await service.getSnipes(accountId, skip, limit)
 			res.json({
 				status: 1,
 				data: results,

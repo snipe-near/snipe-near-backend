@@ -1,4 +1,14 @@
 const activityTypeEnum = Object.freeze({
 	listing: 'listing',
 })
-module.exports = {}
+
+const snipeStatusEnum = Object.freeze({
+	waiting: 'waiting',
+	sniping: 'sniping',
+	success: 'success',
+})
+
+module.exports = {
+	activityTypeEnum,
+	snipeStatusEnum,
+}
