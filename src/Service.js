@@ -94,7 +94,10 @@ class Service {
 			'https://google.com',
 			'https://google.com'
 		)
-		//TODO send push notification
+
+		this._sendWebPushNotification(snipe.accountId, {
+			title: 'Snipe Near',
+		})
 	}
 
 	async processSnipe(snipe) {
