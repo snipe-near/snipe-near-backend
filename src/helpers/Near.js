@@ -45,6 +45,13 @@ class Near {
 			console.log({ response })
 
 			console.log({ log: 6 })
+			console.log(response.data.result && response.data.result.error && pubKey !== accountId)
+			console.log({
+				result: response.data.result,
+				error: response.data.result.error,
+				pubKey,
+				accountId,
+			})
 			if (response.data.result && response.data.result.error && pubKey !== accountId) {
 				throw new Error('unauthorized')
 			}
