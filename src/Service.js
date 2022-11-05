@@ -95,6 +95,7 @@ class Service {
 			'https://google.com'
 		)
 
+		console.log({ snipe })
 		this._sendWebPushNotification(snipe.accountId, {
 			title: 'Snipe Near',
 		})
@@ -200,6 +201,7 @@ class Service {
 	}
 
 	async _sendWebPushNotification(accountId, payload) {
+		console.log({ accountId, payload })
 		const account = await this.repo.getAccountByAccountId(accountId)
 		if (!account) return
 
