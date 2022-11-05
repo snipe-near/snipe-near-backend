@@ -187,15 +187,25 @@ class Service {
 		await validateSubscribeWebPushNotification.validate(subscription, {
 			strict: true,
 		})
-		await this.repo.addSubscriptiondWebPushNotificationToAccount(accountId, subscription)
+		const subscriptionBase64 = Buffer.from(JSON.stringify(subscription)).toString('base64')
+		await this.repo.addSubscriptiondWebPushNotificationToAccount(accountId, subscriptionBase64)
+	}
+
+	async unSubscribeWebPushNotification(accountId, subscription) {
+		await validateSubscribeWebPushNotification.validate(subscription, {
+			strict: true,
+		})
+		const subscriptionBase64 = Buffer.from(JSON.stringify(subscription)).toString('base64')
+		await this.repo.removeSubscriptiondWebPushNotificationToAccount(accountId, subscriptionBase64)
 	}
 
 	async _sendWebPushNotification(accountId, payload) {
 		const account = await this.repo.getAccountByAccountId(accountId)
 		if (!account) return
 
-		for (const subscription of account.webPushSubcriptions) {
-      console.log(subscription)
+		for (let subscription of account.webPushSubcriptions) {
+			subscription = new Buffer.from(subscription, 'base64')
+			subscription = JSON.parse(subscription.toString())
 			this.webPush.sendNotification(subscription, JSON.stringify(payload))
 		}
 	}

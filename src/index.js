@@ -145,6 +145,24 @@ const main = async () => {
 		}
 	})
 
+	server.post('/unsubscribe-web-push-notification', authorizeNear(near), async (req, res) => {
+		try {
+			const accountId = req.account_id
+			const subscription = req.body
+
+			await service.unSubscribeWebPushNotification(accountId, subscription)
+			res.json({
+				status: 1,
+			})
+		} catch (error) {
+			const message = error.message || err
+			res.status(500).json({
+				status: 0,
+				message: message,
+			})
+		}
+	})
+
 	server.get('/test-send-notif', authorizeNear(near), async (req, res) => {
 		try {
 			const accountId = req.account_id

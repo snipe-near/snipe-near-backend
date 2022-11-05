@@ -128,6 +128,19 @@ class Repository {
 		)
 	}
 
+	async removeSubscriptiondWebPushNotificationToAccount(accountId, subscription) {
+		await this.db.mongo.collection('accounts').updateOne(
+			{
+				accountId: accountId,
+			},
+			{
+				$pull: {
+					webPushSubcriptions: subscription,
+				},
+			}
+		)
+	}
+
 	async getAccountByAccountId(accountId) {
 		return await this.db.mongo.collection('accounts').findOne({
 			accountId,
