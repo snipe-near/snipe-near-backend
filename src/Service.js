@@ -90,7 +90,7 @@ class Service {
 		this._sendEmailTokenSniped(
 			snipe.settings.emailNotification,
 			snipe._meta.formatNearAmount,
-			'https://i.ytimg.com/vi/nm8q5ZfFpdc/hq720.jpg?sqp=-oaymwEcCNAFEJQDSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLAhJHl20hmEobcrCisIbaqqcprL-Q',
+			snipe.metadata.image,
 			'https://google.com',
 			'https://google.com'
 		)
