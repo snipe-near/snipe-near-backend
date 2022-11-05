@@ -3,9 +3,13 @@ const nacl = require('tweetnacl')
 const bs58 = require('bs58')
 const sha256 = require('js-sha256')
 const axios = require('axios')
+const AsyncRetry = require('async-retry')
 
 const configs = require('../config/configs')
 
+const sleep = (ms) => {
+	return new Promise((resolve) => setTimeout(resolve, ms))
+}
 const _hexToArr = (str) => {
 	return new Uint8Array(str.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)))
 }
@@ -25,17 +29,36 @@ class Near {
 			}
 
 			const b58pubKey = bs58.encode(Buffer.from(pubKey.toUpperCase(), 'hex'))
-			const response = await axios.post(configs.nearConfig.nodeUrl, {
-				jsonrpc: '2.0',
-				id: 'dontcare',
-				method: 'query',
-				params: {
-					request_type: 'view_access_key',
-					finality: 'final',
-					account_id: accountId,
-					public_key: `ed25519:${b58pubKey}`,
+
+			let response
+			await AsyncRetry(
+				async () => {
+					try {
+						response = await axios.post(configs.nearConfig.nodeUrl, {
+							jsonrpc: '2.0',
+							id: 'dontcare',
+							method: 'query',
+							params: {
+								request_type: 'view_access_key',
+								finality: 'final',
+								account_id: accountId,
+								public_key: `ed25519:${b58pubKey}`,
+							},
+						})
+						if (response.data.result.error) {
+							await sleep(1000)
+							throw new Error('errors.access key is invalid')
+						}
+						return
+					} catch (error) {
+						console.error(error)
+						throw error
+					}
 				},
-			})
+				{
+					retries: 5,
+				}
+			)
 
 			if (response.data.result && response.data.result.error && pubKey !== accountId) {
 				throw new Error('unauthorized.access key is invalid')
