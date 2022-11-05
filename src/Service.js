@@ -51,7 +51,7 @@ class Service {
 	}
 
 	async _sendEmailTokenSniped(toEmail, price, imgUrl, mySnipeUrl, marketplaceUrl) {
-		const subject = 'Hurry Up! Checkout your Token snipe now!'
+		const subject = `Hurry Up! Checkout your Token snipe now! - [${new Date().toLocaleDateString()}]`
 		const template = snipeTokenEmailTemplate(price, imgUrl, mySnipeUrl, marketplaceUrl)
 		await this._sendEmail(toEmail, subject, template)
 	}

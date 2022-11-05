@@ -11,6 +11,7 @@ const Near = require('./helpers/Near')
 const authorizeNear = require('./middleware/authorize-near')
 const Mail = require('./helpers/Mail')
 const WebPush = require('./helpers/Web-push')
+const cors = require('cors')
 
 const main = async () => {
 	const database = new Database()
@@ -30,6 +31,7 @@ const main = async () => {
 	const service = new Service(repository, mail, snipeQueue, webPush)
 
 	const server = express()
+	server.use(cors())
 	server.use(bodyParser.urlencoded({ extended: true }))
 	server.use(bodyParser.json())
 
@@ -143,10 +145,22 @@ const main = async () => {
 		}
 	})
 
-	server.get('/test-send-notif', async (req, res) => {
-		const payload = { title: 'HELLO' }
-		await service._sendWebPushNotification('kangmalu.testnet', payload)
-		res.send('ok')
+	server.get('/test-send-notif', authorizeNear(near), async (req, res) => {
+		try {
+			const accountId = req.account_id
+
+			const payload = { title: 'HELLO' }
+			await service._sendWebPushNotification(accountId, payload)
+			res.status(200).json({
+				status: 1,
+			})
+		} catch (error) {
+			const message = error.message || err
+			res.status(500).json({
+				status: 0,
+				message: message,
+			})
+		}
 	})
 
 	server.listen(configs.port)
