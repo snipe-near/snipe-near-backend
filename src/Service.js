@@ -82,23 +82,24 @@ class Service {
 	}
 
 	async _sendNotification(snipe) {
-		if (!snipe.settings.emailNotification) return
-		// TODO get token image
-		// TODO get marketplace url by receiverId
-		// TODO get my snipe url
+		if (snipe.settings.emailNotification) {
+			// TODO get token image
+			// TODO get marketplace url by receiverId
+			// TODO get my snipe url
+			this._sendEmailTokenSniped(
+				snipe.settings.emailNotification,
+				snipe._meta.formatNearAmount,
+				snipe.metadata.media,
+				'https://google.com',
+				'https://google.com'
+			)
+		}
 
-		this._sendEmailTokenSniped(
-			snipe.settings.emailNotification,
-			snipe._meta.formatNearAmount,
-			snipe.metadata.media,
-			'https://google.com',
-			'https://google.com'
-		)
-
-		console.log({ snipe })
+		// if (snipe.settings.enablePushNotification) {
 		this._sendWebPushNotification(snipe.accountId, {
 			title: 'Snipe Near',
 		})
+		// }
 	}
 
 	async processSnipe(snipe) {
