@@ -9,6 +9,7 @@ module.exports = (near) => {
 				throw new Error('unauthorized')
 			}
 		} catch (error) {
+			console.log(error)
 			return res.status(401).json({
 				status: 0,
 				message: 'unauthorized',
