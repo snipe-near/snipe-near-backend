@@ -51,7 +51,7 @@ class Service {
 	}
 
 	async _sendEmailTokenSniped(toEmail, price, imgUrl, mySnipeUrl, marketplaceUrl) {
-		const subject = `Hurry Up! Checkout your Token snipe now! - [${new Date().toLocaleDateString()}]`
+		const subject = `Hurry Up! Checkout your Token snipe now! - [${new Date().toISOString()}]`
 		const template = snipeTokenEmailTemplate(price, imgUrl, mySnipeUrl, marketplaceUrl)
 		await this._sendEmail(toEmail, subject, template)
 	}
@@ -90,7 +90,7 @@ class Service {
 		this._sendEmailTokenSniped(
 			snipe.settings.emailNotification,
 			snipe._meta.formatNearAmount,
-			snipe.metadata.image,
+			snipe.metadata.media,
 			'https://google.com',
 			'https://google.com'
 		)

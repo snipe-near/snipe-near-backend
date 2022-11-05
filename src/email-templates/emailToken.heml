@@ -57,12 +57,6 @@
               <button style="background-color:#cca8b4;color:#ffffff;"><b>Checkout my snipe</b></button>
             </a>
           </block>
-          <p style="text-align:center;color:white">
-           or here 
-          </p>
-          <a style="text-align:center;color:#ccb8b1" href="${marketplaceUrl}">
-            <p style="text-align:center;color:#ccb8b1">Marketplace</p>
-          </a>
         </column>
       </row>
     </container>
