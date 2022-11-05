@@ -42,6 +42,8 @@ class Near {
 				},
 			})
 
+			console.log({ response })
+
 			console.log({ log: 6 })
 			if (response.data.result && response.data.result.error && pubKey !== accountId) {
 				throw new Error('unauthorized')
