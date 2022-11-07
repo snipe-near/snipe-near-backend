@@ -59,8 +59,8 @@ class Repository {
 				{
 					externalId: idOrExternalId,
 				},
-				accountId,
 			],
+			accountId,
 		})
 	}
 

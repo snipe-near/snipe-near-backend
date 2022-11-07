@@ -236,12 +236,12 @@ class Service {
 	}
 
 	async deleteSnipe(accountId, id) {
-		const snipe = await this.repo.getSnipeByIdOrExternalId(accountId, idOrExternalId)
-		if (snipe.status !== snipeStatusEnum.waiting) {
-			throw new Error('errors.snipe is not in waiting state')
-		}
+		const snipe = await this.repo.getSnipeByIdOrExternalId(accountId, id)
 		if (snipe.isAutoBuy) {
 			throw new Error('errors.snipe is auto buy type')
+		}
+		if (snipe.status !== snipeStatusEnum.waiting) {
+			throw new Error('errors.snipe is not in waiting state')
 		}
 
 		await this.repo.deleteSnipe(accountId, id)
