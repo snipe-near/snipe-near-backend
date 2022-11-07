@@ -34,6 +34,12 @@ class Repository {
 		await this.snipesDb.insertOne(snipe)
 	}
 
+	async createSnipeWithSession(session, snipe) {
+		await this.snipesDb.insertOne(snipe, {
+			session,
+		})
+	}
+
 	async getSnipes(accountId, skip = 0, limit = 30) {
 		return await this.snipesDb
 			.find({
@@ -44,20 +50,71 @@ class Repository {
 			.toArray()
 	}
 
+	async getSnipeByIdOrExternalId(accountId, idOrExternalId) {
+		return await this.snipesDb.findOne({
+			$or: [
+				{
+					_id: ObjectId(idOrExternalId),
+				},
+				{
+					externalId: idOrExternalId,
+				},
+				accountId,
+			],
+		})
+	}
+
 	async countSnipe(accountId) {
 		return await this.snipesDb.count({
 			accountId,
 		})
 	}
 
-	async updateSnipe(accountId, id, snipe) {
+	async updateSnipe(accountId, idOrExternalId, data) {
+		await this.snipesDb.updateOne(
+			{
+				$or: [
+					{
+						_id: ObjectId(idOrExternalId),
+					},
+					{
+						externalId: idOrExternalId,
+					},
+				],
+				accountId,
+			},
+			{
+				$set: data,
+			}
+		)
+	}
+
+	async updateSnipeByExternalIdWithSession(session, accountId, externalId, data) {
+		await this.snipesDb.updateOne(
+			{
+				externalId,
+				accountId,
+			},
+			{
+				$set: data,
+			},
+			{
+				session,
+			}
+		)
+	}
+
+	async updateSnipeByIdWithSession(session, accountId, id, data) {
 		await this.snipesDb.updateOne(
 			{
 				_id: ObjectId(id),
 				accountId,
 			},
 			{
-				$set: snipe,
+				$set: data,
+			},
+			{
+				session,
 			}
 		)
 	}
@@ -67,6 +124,18 @@ class Repository {
 			_id: ObjectId(id),
 			accountId,
 		})
+	}
+
+	async deleteSnipeByExternalIdWithSession(session, accountId, externalId) {
+		await this.snipesDb.deleteOne(
+			{
+				externalId,
+				accountId,
+			},
+			{
+				session,
+			}
+		)
 	}
 
 	// exact nft (contractId, tokenId) not a collection

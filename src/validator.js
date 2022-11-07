@@ -19,6 +19,17 @@ module.exports = {
 				media: yup.string().optional(),
 			})
 			.optional(),
+		isAutoBuy: yup.boolean().required(),
+	}),
+	validateUpdateSnipe: yup.object().shape({
+		price: yup.string().required(),
+		settings: yup
+			.object()
+			.shape({
+				emailNotification: yup.string().email().optional(),
+				enablePushNotification: yup.boolean().optional(),
+			})
+			.required(),
 	}),
 	validateSubscribeWebPushNotification: yup.object().shape({
 		endpoint: yup.string().required(),

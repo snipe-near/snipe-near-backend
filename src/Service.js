@@ -1,7 +1,12 @@
-const { validateSnipe, validateSubscribeWebPushNotification } = require('./validator')
+const {
+	validateSnipe,
+	validateSubscribeWebPushNotification,
+	validateUpdateSnipe,
+} = require('./validator')
 const { utils } = require('near-api-js')
 const snipeTokenEmailTemplate = require('./email-templates/emailToken')
 const { snipeStatusEnum, activityTypeEnum } = require('./enums')
+const { ObjectId } = require('mongodb')
 
 class Service {
 	constructor(repo, mail, snipeQueue, webPush) {
@@ -18,6 +23,7 @@ class Service {
 
 			for (const activity of activities) {
 				await this._watchListingActivity(session, activity)
+				await this._watchSnipeActivity(session, activity)
 			}
 
 			await this.repo.insertActivitiesWithSession(session, activities)
@@ -81,6 +87,51 @@ class Service {
 		}
 	}
 
+	async _watchSnipeActivity(session, activity) {
+		if (activity.type === activityTypeEnum.snipe) {
+			if (!ObjectId.isValid(activity.data.memo)) {
+				return
+			}
+
+			await this.repo.updateSnipeByIdWithSession(
+				session,
+				activity.data.accountId,
+				activity.data.memo,
+				{
+					externalId: activity.data.snipeId,
+					accountId: activity.data.accountId,
+					contractId: activity.data.contractId,
+					tokenId: activity.data.tokenId,
+					deposit: activity.data.deposit,
+					status: snipeStatusEnum.waiting,
+					isAutoBuy: true,
+				}
+			)
+		}
+
+		if (activity.type === activityTypeEnum.deleteSnipe) {
+			await this.repo.deleteSnipeByExternalIdWithSession(
+				session,
+				activity.data.accountId,
+				activity.data.snipeId
+			)
+		}
+
+		if (activity.type === activityTypeEnum.buyToken) {
+			await this.repo.updateSnipeByExternalIdWithSession(
+				session,
+				activity.data.accountId,
+				activity.data.snipeId,
+				{
+					status: activity.data.status,
+					_meta: {
+						buyReceiptId: activity.receiptId,
+					},
+				}
+			)
+		}
+	}
+
 	async _sendNotification(snipe) {
 		if (snipe.settings.emailNotification) {
 			// TODO get token image
@@ -129,13 +180,14 @@ class Service {
 					emailNotification: body.settings.emailNotification || null,
 					enablePushNotification: body.settings.enablePushNotification || false,
 				},
+				isAutoBuy: body.isAutoBuy,
 				// TODO move metadata to _meta & get value from view contract
 				metadata: {
 					title: body.metadata.title || null,
 					media: body.metadata.media || null,
 				},
 			},
-			status: snipeStatusEnum.waiting,
+			status: body.isAutoBuy === true ? snipeStatusEnum.notActive : snipeStatusEnum.waiting,
 			createdAt: new Date().getTime(),
 			updatedAt: null,
 			_meta: {
@@ -158,16 +210,18 @@ class Service {
 		}
 	}
 
-	async updateSnipe(accountId, id, body) {
-		await validateSnipe.validate(body, {
+	async updateSnipe(accountId, idOrExternalId, body) {
+		await validateUpdateSnipe.validate(body, {
 			strict: true,
 		})
 
-		// TOOD validate contract
-		await this.repo.updateSnipe(accountId, id, {
+		const snipe = await this.repo.getSnipeByIdOrExternalId(accountId, idOrExternalId)
+		if (snipe.status !== snipeStatusEnum.waiting) {
+			throw new Error('errors.snipe is not in waiting state')
+		}
+
+		await this.repo.updateSnipe(accountId, idOrExternalId, {
 			...{
-				contractId: body.contractId,
-				tokenId: body.tokenId,
 				price: body.price,
 				settings: {
 					emailNotification: body.settings.emailNotification || null,
@@ -182,6 +236,14 @@ class Service {
 	}
 
 	async deleteSnipe(accountId, id) {
+		const snipe = await this.repo.getSnipeByIdOrExternalId(accountId, idOrExternalId)
+		if (snipe.status !== snipeStatusEnum.waiting) {
+			throw new Error('errors.snipe is not in waiting state')
+		}
+		if (snipe.isAutoBuy) {
+			throw new Error('errors.snipe is auto buy type')
+		}
+
 		await this.repo.deleteSnipe(accountId, id)
 	}
 
