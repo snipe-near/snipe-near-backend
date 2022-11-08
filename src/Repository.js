@@ -31,7 +31,7 @@ class Repository {
 	}
 
 	async createSnipe(snipe) {
-		await this.snipesDb.insertOne(snipe)
+		return await this.snipesDb.insertOne(snipe)
 	}
 
 	async createSnipeWithSession(session, snipe) {

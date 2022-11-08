@@ -60,10 +60,11 @@ const main = async () => {
 		try {
 			const accountId = req.account_id
 			const snipeData = req.body
-			await service.snipe(accountId, snipeData)
+			const result = await service.snipe(accountId, snipeData)
 
 			res.json({
 				status: 1,
+				data: result,
 			})
 		} catch (error) {
 			const message = error.message || err

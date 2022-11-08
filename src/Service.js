@@ -197,7 +197,7 @@ class Service {
 		})
 
 		//TODO validate contract
-		await this.repo.createSnipe({
+		const result = await this.repo.createSnipe({
 			accountId,
 			...{
 				contractId: body.contractId,
@@ -221,6 +221,10 @@ class Service {
 				formatNearAmount: parseFloat(utils.format.formatNearAmount(body.price)),
 			},
 		})
+
+		return {
+			_id: result.insertedId,
+		}
 	}
 
 	async getSnipes(accountId, skip = 0, limit = 30) {
