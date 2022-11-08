@@ -16,11 +16,16 @@ const cors = require('cors')
 const main = async () => {
 	const database = new Database()
 	await database.init()
+
 	const cache = new Cache()
 	await cache.init()
+
 	const near = new Near()
+	await near.init()
+
 	const mail = new Mail()
 	await mail.init()
+
 	const webPush = new WebPush()
 	await webPush.init()
 
@@ -28,7 +33,7 @@ const main = async () => {
 	const snipeQueue = new Queue('snipe', configs.redisUrl)
 
 	const repository = new Repository(database, cache)
-	const service = new Service(repository, mail, snipeQueue, webPush)
+	const service = new Service(repository, mail, snipeQueue, webPush, near)
 
 	const server = express()
 	server.use(cors())
@@ -42,13 +47,13 @@ const main = async () => {
 	})
 
 	snipeQueue.process(async (job, done) => {
-		const snipe = job.data.snipe
-		await service.processSnipe(snipe)
+		const { snipe, activity } = job.data
+		await service.processSnipe(snipe, activity)
 		done()
 	})
 
 	server.get('/', (_, res) => {
-		res.send('ok gan')
+		res.send('ok')
 	})
 
 	server.post('/snipes', authorizeNear(near), async (req, res) => {

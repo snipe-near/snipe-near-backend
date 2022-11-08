@@ -15,4 +15,7 @@ module.exports = {
 		publicKey: process.env.VAPID_PUBLIC_KEY,
 		privateKey: process.env.VAPID_PRIVATE_KEY,
 	},
+	snipeNearContractId: process.env.SNIPE_NEAR_CONTRACT_ID,
+	snipeNearPublicKey: process.env.SNIPE_NEAR_PUBLIC_KEY,
+	snipeNearPrivateKey: process.env.SNIPE_NEAR_PRIVATE_KEY,
 }

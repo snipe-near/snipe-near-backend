@@ -4,6 +4,8 @@ const bs58 = require('bs58')
 const sha256 = require('js-sha256')
 const axios = require('axios')
 const AsyncRetry = require('async-retry')
+const { Contract, KeyPair, connect } = require('near-api-js')
+const { InMemoryKeyStore } = require('near-api-js').keyStores
 
 const configs = require('../config/configs')
 
@@ -15,6 +17,31 @@ const _hexToArr = (str) => {
 }
 
 class Near {
+	async init() {
+		const keyStore = new InMemoryKeyStore()
+
+		const snipeNearKeyPair = KeyPair.fromString(configs.snipeNearPrivateKey)
+		await keyStore.setKey(
+			configs.nearConfig.networkId,
+			configs.snipeNearContractId,
+			snipeNearKeyPair
+		)
+
+		const near = await connect({
+			keyStore: keyStore,
+			...configs.nearConfig,
+		})
+
+		this.snipeNearAccount = await near.account(configs.snipeNearContractId)
+
+		const snipeNearContract = new Contract(this.snipeNearAccount, configs.snipeNearContractId, {
+			viewMethods: ['snipe_by_id', 'snipes_by_account_id'],
+			changeMethods: ['snipe', 'delete_snipe', 'buy_token'],
+		})
+
+		this.snipeNearContract = snipeNearContract
+	}
+
 	async authSignature(authHeader) {
 		try {
 			const decodeAuthHeader = Base64.decode(authHeader)

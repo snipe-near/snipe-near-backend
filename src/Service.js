@@ -9,11 +9,12 @@ const { snipeStatusEnum, activityTypeEnum } = require('./enums')
 const { ObjectId } = require('mongodb')
 
 class Service {
-	constructor(repo, mail, snipeQueue, webPush) {
+	constructor(repo, mail, snipeQueue, webPush, near) {
 		this.repo = repo
 		this.mail = mail
 		this.snipeQueue = snipeQueue
 		this.webPush = webPush
+		this.near = near
 	}
 
 	async processActivites(activities) {
@@ -83,7 +84,7 @@ class Service {
 		)
 
 		for (const snipe of snipes) {
-			await this.snipeQueue.add({ snipe })
+			await this.snipeQueue.add({ snipe, activity })
 		}
 	}
 
@@ -129,10 +130,20 @@ class Service {
 					},
 				}
 			)
+
+			if (activity.data.status === snipeStatusEnum.success) {
+				const snipe = await this.repo.getSnipeByExternalId(
+					activity.data.accountId,
+					activity.data.snipeId
+				)
+
+				await this._sendNotification(snipe)
+			}
 		}
 	}
 
 	async _sendNotification(snipe) {
+		// TODO send notification isAutobuy, should be different from normal snipe
 		if (snipe.settings.emailNotification) {
 			// TODO get token image
 			// TODO get marketplace url by receiverId
@@ -146,18 +157,34 @@ class Service {
 			)
 		}
 
-		// if (snipe.settings.enablePushNotification) {
-		this._sendWebPushNotification(snipe.accountId, {
-			title: 'Snipe Near',
-		})
-		// }
+		if (snipe.settings.enablePushNotification) {
+			this._sendWebPushNotification(snipe.accountId, {
+				title: 'Snipe Near',
+			})
+		}
 	}
 
-	async processSnipe(snipe) {
+	async _processAutoBuy(listingActivity) {
+		// fire and forget, the indexer will update the status later
+		this.near.snipeNearContract.buy_token({
+			args: {
+				marketplace_contract_id: listingActivity.data.marketplaceContractId,
+				price: listingActivity.data.price,
+				snipe_id: externalId,
+			},
+			gas: '300000000000000', // TODO optimize gas
+		})
+	}
+
+	async processSnipe(snipe, activity) {
 		try {
-			await this._sendNotification(snipe)
-			//TODO process auto buy
-			await this.repo.setSnipeStatus(snipe._id, snipeStatusEnum.success)
+			if (!snipe.isAutoBuy) {
+				await this._sendNotification(snipe)
+				await this.repo.setSnipeStatus(snipe._id, snipeStatusEnum.success)
+				return
+			}
+
+			await this._processAutoBuy(snipe, activity)
 		} catch (error) {
 			console.error('errors.snipe token', error)
 			await this.repo.setSnipeStatus(snipe._id, snipeStatusEnum.failed)
