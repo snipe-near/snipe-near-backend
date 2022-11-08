@@ -119,6 +119,22 @@ class Repository {
 		)
 	}
 
+	async updateNotActiveSnipeByIdWithSession(session, accountId, id, data) {
+		await this.snipesDb.updateOne(
+			{
+				_id: ObjectId(id),
+				accountId,
+				status: snipeStatusEnum.notActive,
+			},
+			{
+				$set: data,
+			},
+			{
+				session,
+			}
+		)
+	}
+
 	async deleteSnipe(accountId, id) {
 		await this.snipesDb.deleteOne({
 			_id: ObjectId(id),

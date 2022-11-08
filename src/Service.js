@@ -94,7 +94,7 @@ class Service {
 				return
 			}
 
-			await this.repo.updateSnipeByIdWithSession(
+			await this.repo.updateNotActiveSnipeByIdWithSession(
 				session,
 				activity.data.accountId,
 				activity.data.memo,
@@ -132,7 +132,7 @@ class Service {
 			)
 
 			if (activity.data.status === snipeStatusEnum.success) {
-				const snipe = await this.repo.getSnipeByExternalId(
+				const snipe = await this.repo.getSnipeByIdOrExternalId(
 					activity.data.accountId,
 					activity.data.snipeId
 				)
@@ -164,13 +164,13 @@ class Service {
 		}
 	}
 
-	async _processAutoBuy(listingActivity) {
+	async _processAutoBuy(snipe, listingActivity) {
 		// fire and forget, the indexer will update the status later
 		this.near.snipeNearContract.buy_token({
 			args: {
 				marketplace_contract_id: listingActivity.data.marketplaceContractId,
 				price: listingActivity.data.price,
-				snipe_id: externalId,
+				snipe_id: snipe.externalId,
 			},
 			gas: '300000000000000', // TODO optimize gas
 		})
