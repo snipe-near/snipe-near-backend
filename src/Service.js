@@ -136,7 +136,9 @@ class Service {
 					activity.data.accountId,
 					activity.data.snipeId
 				)
-
+				if (!snipe) {
+					return
+				}
 				await this._sendNotification(snipe)
 			}
 		}
