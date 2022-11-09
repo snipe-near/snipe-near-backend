@@ -36,7 +36,11 @@ const main = async () => {
 	const service = new Service(repository, mail, snipeQueue, webPush, near)
 
 	const server = express()
-	server.use(cors())
+	var corsOptions = {
+		origin: '*',
+		optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
+	}
+	server.use(cors(corsOptions))
 	server.use(bodyParser.urlencoded({ extended: true }))
 	server.use(bodyParser.json())
 
