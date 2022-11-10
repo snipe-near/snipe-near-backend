@@ -193,19 +193,23 @@ class Service {
 		}
 	}
 	async _getUrlFromValueNftData(data) {
-		data = data.toLowerCase()
-		if (data.includes('http://') || data.includes('https://')) {
-			if (data.includes('ipfs.io/ipfs')) {
+		if (!data) {
+			return ''
+		}
+
+		const dataLowerCase = data.toLowerCase()
+		if (dataLowerCase.includes('http://') || dataLowerCase.includes('https://')) {
+			if (dataLowerCase.includes('ipfs.io/ipfs')) {
 				return data.replace('ipfs.io/ipfs', 'cloudflare-ipfs.com/ipfs')
 			}
 			return data
 		}
 
 		let hash
-		if (!data.includes('ipfs://')) {
-			hash = new CID(data).toString()
+		if (!dataLowerCase.includes('ipfs://')) {
+			hash = new CID(dataLowerCase).toString()
 		} else {
-			let ipfsSplit = data.split('://')
+			let ipfsSplit = dataLowerCase.split('://')
 			if (ipfsSplit.length === 0) {
 				return null
 			}
@@ -230,18 +234,27 @@ class Service {
 		return extraObj
 	}
 
+	_getFullUrlFromBaseUri(nftMetadata, url) {
+		if (nftMetadata.base_uri) {
+			let baseUri = nftMetadata.base_uri
+			if (baseUri.slice(-1) !== '/') {
+				baseUri = baseUri + '/'
+			}
+
+			return baseUri + url
+		}
+
+		return url
+	}
+
 	async _getObjFromReference(nftToken, nftMetadata) {
 		if (!nftToken?.metadata?.reference) {
 			return {}
 		}
-
-		let reference = nftToken.metadata.reference
-		if (nftMetadata.base_uri) {
-			reference = nftMetadata.base_uri + nftToken.metadata.reference
-		}
+		const reference = this._getFullUrlFromBaseUri(nftMetadata, nftToken.metadata.reference)
 
 		const referenceUrl = await this._getUrlFromValueNftData(reference)
-		const response = AsyncRetry(
+		const response = await AsyncRetry(
 			async () => {
 				try {
 					return await axios.get(referenceUrl)
@@ -273,11 +286,7 @@ class Service {
 	}
 
 	async _getMediaUrl(nftToken, nftMetadata) {
-		let media = nftToken.metadata.media
-		if (nftMetadata.base_uri) {
-			media = nftMetadata.base_uri + nftToken.metadata.media
-		}
-
+		const media = this._getFullUrlFromBaseUri(nftMetadata, nftToken.metadata.media)
 		return await this._getUrlFromValueNftData(media)
 	}
 
@@ -302,12 +311,10 @@ class Service {
 			}
 			nftToken.metadata = metadata
 
-			const media = await this._getMediaUrl(nftToken, nftMetadata)
-			const title = nftToken.metadata.title || ''
+			const mediaUrl = await this._getMediaUrl(nftToken, nftMetadata)
 
 			const result = {
-				media,
-				title,
+				mediaUrl,
 				nftToken: nftToken,
 				nftMetadata: nftMetadata,
 			}
@@ -443,7 +450,6 @@ class Service {
 	}
 
 	async _sendWebPushNotification(accountId, payload) {
-		console.log({ accountId, payload })
 		const account = await this.repo.getAccountByAccountId(accountId)
 		if (!account) return
 
