@@ -154,9 +154,9 @@ class Service {
 			// TODO get marketplace url by receiverId
 			// TODO get my snipe url
 			this._sendEmailTokenSniped(
-				snipe.settings.emailNotification,
-				snipe._meta.formatNearAmount,
-				snipe.metadata.media,
+				snipe.settings?.emailNotification,
+				snipe._meta?.formatNearAmount,
+				snipe._meta?.mediaUrl,
 				'https://google.com',
 				'https://google.com'
 			)
