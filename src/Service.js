@@ -2,19 +2,22 @@ const {
 	validateSnipe,
 	validateSubscribeWebPushNotification,
 	validateUpdateSnipe,
+	validateCheckNft,
 } = require('./validator')
 const { utils } = require('near-api-js')
 const snipeTokenEmailTemplate = require('./email-templates/emailToken')
 const { snipeStatusEnum, activityTypeEnum } = require('./enums')
 const { ObjectId } = require('mongodb')
+const CID = require('cids')
+const axios = require('axios')
+const AsyncRetry = require('async-retry')
 
 class Service {
-	constructor(repo, mail, snipeQueue, webPush, near) {
+	constructor(repo, mail, snipeQueue, webPush) {
 		this.repo = repo
 		this.mail = mail
 		this.snipeQueue = snipeQueue
 		this.webPush = webPush
-		this.near = near
 	}
 
 	async processActivites(activities) {
@@ -168,14 +171,11 @@ class Service {
 
 	async _processAutoBuy(snipe, listingActivity) {
 		// fire and forget, the indexer will update the status later
-		this.near.snipeNearContract.buy_token({
-			args: {
-				marketplace_contract_id: listingActivity.data.marketplaceContractId,
-				price: listingActivity.data.price,
-				snipe_id: snipe.externalId,
-			},
-			gas: '300000000000000', // TODO optimize gas
-		})
+		this.repo.buyToken(
+			listingActivity.data.marketplaceContractId,
+			listingActivity.data.price,
+			snipe.externalId
+		)
 	}
 
 	async processSnipe(snipe, activity) {
@@ -192,13 +192,163 @@ class Service {
 			await this.repo.setSnipeStatus(snipe._id, snipeStatusEnum.failed)
 		}
 	}
+	async _getUrlFromValueNftData(data) {
+		data = data.toLowerCase()
+		if (data.includes('http://') || data.includes('https://')) {
+			if (data.includes('ipfs.io/ipfs')) {
+				return data.replace('ipfs.io/ipfs', 'cloudflare-ipfs.com/ipfs')
+			}
+			return data
+		}
+
+		let hash
+		if (!data.includes('ipfs://')) {
+			hash = new CID(data).toString()
+		} else {
+			let ipfsSplit = data.split('://')
+			if (ipfsSplit.length === 0) {
+				return null
+			}
+
+			hash = new CID(ipfsSplit[1]).toString()
+		}
+
+		return `https://cloudflare-ipfs.com/ipfs/${hash}`
+	}
+
+	_getObjFromExtra(extra) {
+		if (extra === null || extra === undefined || Number.isInteger(extra)) {
+			return {}
+		}
+		let extraObj
+		try {
+			extraObj = JSON.parse(extra)
+		} catch {
+			return {}
+		}
+
+		return extraObj
+	}
+
+	async _getObjFromReference(nftToken, nftMetadata) {
+		if (!nftToken?.metadata?.reference) {
+			return {}
+		}
+
+		let reference = nftToken.metadata.reference
+		if (nftMetadata.base_uri) {
+			reference = nftMetadata.base_uri + nftToken.metadata.reference
+		}
+
+		const referenceUrl = await this._getUrlFromValueNftData(reference)
+		const response = AsyncRetry(
+			async () => {
+				try {
+					return await axios.get(referenceUrl)
+				} catch (error) {
+					console.error(error)
+					throw error
+				}
+			},
+			{
+				retries: 10,
+				minTimeout: 1000,
+				maxTimeout: 5000,
+			}
+		)
+		if (!(response && (typeof response.data === 'object' || response === 'object'))) {
+			return {}
+		}
+
+		return response.data
+	}
+
+	_omitNull(obj) {
+		if (!obj) return {}
+
+		Object.keys(obj)
+			.filter((k) => obj[k] === null)
+			.forEach((k) => delete obj[k])
+		return obj
+	}
+
+	async _getMediaUrl(nftToken, nftMetadata) {
+		let media = nftToken.metadata.media
+		if (nftMetadata.base_uri) {
+			media = nftMetadata.base_uri + nftToken.metadata.media
+		}
+
+		return await this._getUrlFromValueNftData(media)
+	}
+
+	async _getDeepNftData(contractId, tokenId) {
+		try {
+			const cache = await this.repo.getNftDataCache(contractId, tokenId)
+			if (cache) {
+				return cache
+			}
+
+			const [nftToken, nftMetadata] = await Promise.all([
+				this.repo.viewNftToken(contractId, tokenId),
+				this.repo.viewNftMetadata(contractId),
+			])
+
+			const reference = await this._getObjFromReference(nftToken, nftMetadata)
+			const extra = this._getObjFromExtra(nftToken.metadata?.extra)
+			const metadata = {
+				...this._omitNull(reference),
+				...this._omitNull(extra),
+				...this._omitNull(nftToken.metadata),
+			}
+			nftToken.metadata = metadata
+
+			const media = await this._getMediaUrl(nftToken, nftMetadata)
+			const title = nftToken.metadata.title || ''
+
+			const result = {
+				media,
+				title,
+				nftToken: nftToken,
+				nftMetadata: nftMetadata,
+			}
+
+			this.repo.setNftDataCache(contractId, tokenId, result)
+
+			return result
+		} catch (error) {
+			console.error(error)
+			return null
+		}
+	}
+
+	async checkNft(contractId, tokenId) {
+		await validateCheckNft.validate(
+			{
+				contractId,
+				tokenId,
+			},
+			{
+				strict: true,
+			}
+		)
+		const nftData = await this._getDeepNftData(contractId, tokenId)
+		if (!nftData) {
+			throw new Error('errors.nft error or invalid')
+		}
+
+		return nftData
+	}
 
 	async snipe(accountId, body) {
 		await validateSnipe.validate(body, {
 			strict: true,
 		})
 
-		//TODO validate contract
+		const nftData = await this._getDeepNftData(body.contractId, body.tokenId)
+		if (!nftData) {
+			throw new Error('errors.nft error or invalid')
+		}
+
 		const result = await this.repo.createSnipe({
 			accountId,
 			...{
@@ -210,17 +360,13 @@ class Service {
 					enablePushNotification: body.settings.enablePushNotification || false,
 				},
 				isAutoBuy: body.isAutoBuy,
-				// TODO move metadata to _meta & get value from view contract
-				metadata: {
-					title: body.metadata.title || null,
-					media: body.metadata.media || null,
-				},
 			},
 			status: body.isAutoBuy === true ? snipeStatusEnum.notActive : snipeStatusEnum.waiting,
 			createdAt: new Date().getTime(),
 			updatedAt: null,
 			_meta: {
 				formatNearAmount: parseFloat(utils.format.formatNearAmount(body.price)),
+				...nftData,
 			},
 		})
 

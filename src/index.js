@@ -32,8 +32,8 @@ const main = async () => {
 	const indexerQueue = new Queue('indexer', configs.redisUrl)
 	const snipeQueue = new Queue('snipe', configs.redisUrl)
 
-	const repository = new Repository(database, cache)
-	const service = new Service(repository, mail, snipeQueue, webPush, near)
+	const repository = new Repository(database, cache, near)
+	const service = new Service(repository, mail, snipeQueue, webPush)
 
 	const server = express()
 	var corsOptions = {
@@ -181,6 +181,25 @@ const main = async () => {
 			await service._sendWebPushNotification(accountId, payload)
 			res.status(200).json({
 				status: 1,
+			})
+		} catch (error) {
+			const message = error.message || err
+			res.status(500).json({
+				status: 0,
+				message: message,
+			})
+		}
+	})
+
+	server.get('/check-nft', async (req, res) => {
+		try {
+			const contractId = req.query.contractId
+			const tokenId = req.query.tokenId
+			const result = await service.checkNft(contractId, tokenId)
+
+			res.json({
+				status: 1,
+				data: result,
 			})
 		} catch (error) {
 			const message = error.message || err

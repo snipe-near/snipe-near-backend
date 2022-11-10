@@ -3,7 +3,7 @@ const yup = require('yup')
 module.exports = {
 	validateSnipe: yup.object().shape({
 		contractId: yup.string().required(),
-		tokenId: yup.string().optional(),
+		tokenId: yup.string().required(),
 		price: yup.string().required(),
 		settings: yup
 			.object()
@@ -12,13 +12,6 @@ module.exports = {
 				enablePushNotification: yup.boolean().optional(),
 			})
 			.required(),
-		metadata: yup
-			.object()
-			.shape({
-				title: yup.string().optional(),
-				media: yup.string().optional(),
-			})
-			.optional(),
 		isAutoBuy: yup.boolean().required(),
 	}),
 	validateUpdateSnipe: yup.object().shape({
@@ -41,5 +34,9 @@ module.exports = {
 				auth: yup.string().required(),
 			})
 			.required(),
+	}),
+	validateCheckNft: yup.object().shape({
+		contractId: yup.string().required(),
+		tokenId: yup.string().required(),
 	}),
 }

@@ -2,9 +2,10 @@ const { ObjectId } = require('mongodb')
 const { snipeStatusEnum } = require('./enums')
 
 class Repository {
-	constructor(db, cache) {
+	constructor(db, cache, near) {
 		this.db = db
 		this.cache = cache
+		this.near = near
 
 		this.activitesDb = db.mongo.collection('activities')
 		this.snipesDb = db.mongo.collection('snipes')
@@ -230,6 +231,53 @@ class Repository {
 		return await this.db.mongo.collection('accounts').findOne({
 			accountId,
 		})
+	}
+
+	async buyToken(marketplaceContracId, price, externalId) {
+		await this.near.snipeNearContract.buy_token({
+			args: {
+				marketplace_contract_id: marketplaceContracId,
+				price: price,
+				snipe_id: externalId,
+			},
+			gas: '300000000000000', // TODO optimize gas
+		})
+	}
+
+	async viewNftToken(contractId, tokenId) {
+		return await this.near.snipeNearAccount.viewFunctionV2({
+			contractId,
+			methodName: 'nft_token',
+			args: { token_id: tokenId },
+		})
+	}
+
+	async viewNftMetadata(contractId) {
+		return await this.near.snipeNearAccount.viewFunctionV2({
+			contractId,
+			methodName: 'nft_metadata',
+			args: {},
+		})
+	}
+
+	async getNftDataCache(contractId, tokenId) {
+		return await this.getCache(`nft_data:${contractId}:${tokenId}`)
+	}
+
+	async setNftDataCache(contractId, tokenId, data) {
+		await this.setCache(`nft_data:${contractId}:${tokenId}`, data)
+	}
+
+	async setCache(key, data, ttl = 3600 * 24) {
+		await this.cache.redis.set(key, JSON.stringify(data), 'EX', ttl)
+	}
+
+	async getCache(key) {
+		const data = await this.cache.redis.get(key)
+		if (!data) {
+			return null
+		}
+		return JSON.parse(data)
 	}
 }
 
