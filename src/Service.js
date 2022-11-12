@@ -200,7 +200,7 @@ class Service {
 		const dataLowerCase = data.toLowerCase()
 		if (dataLowerCase.includes('http://') || dataLowerCase.includes('https://')) {
 			if (dataLowerCase.includes('ipfs.io/ipfs')) {
-				return data.replace('ipfs.io/ipfs', 'ipfs.fleek.co/ipfs')
+				return data.replace('ipfs.io/ipfs', 'gateway.pinata.cloud/ipfs')
 			}
 			return data
 		}
@@ -217,7 +217,7 @@ class Service {
 			hash = new CID(ipfsSplit[1]).toString()
 		}
 
-		return `https://ipfs.fleek.co/ipfs/${hash}`
+		return `https://gateway.pinata.cloud/ipfs/${hash}`
 	}
 
 	_getObjFromExtra(extra) {
