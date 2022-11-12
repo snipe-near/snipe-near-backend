@@ -166,6 +166,9 @@ class Repository {
 				},
 				status: snipeStatusEnum.waiting,
 			})
+			.sort({
+				createdAt: -1,
+			})
 			.toArray()
 	}
 

@@ -67,6 +67,7 @@ class Service {
 	}
 
 	async _getSnipesGreaterOrEqualPrice(contractId, tokenId, price) {
+		//TODO optimize search mechanism
 		//TODO search snipes by collection
 		return await this.repo.getSnipesGreaterOrEqualPrice(contractId, tokenId, price)
 	}
@@ -86,8 +87,17 @@ class Service {
 			snipeStatusEnum.sniping
 		)
 
+		// when the snipe is autobuy, it's only needed to add the first snipe to the queue
+		let isAutoBuyHasBeenAdded = false
 		for (const snipe of snipes) {
+			if (!snipe.isAutoBuy) {
+				await this.snipeQueue.add({ snipe, activity })
+				continue
+			}
+
+			if (isAutoBuyHasBeenAdded === true) continue
 			await this.snipeQueue.add({ snipe, activity })
+			isAutoBuyHasBeenAdded = true
 		}
 	}
 
