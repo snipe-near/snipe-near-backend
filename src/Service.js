@@ -304,7 +304,7 @@ class Service {
 
 			// TODO hack, only get reference when the media is not exist
 			let reference = {}
-			if (!nftToken?.metadata?.media) {
+			if (!nftToken?.metadata?.media || !nftToken?.metadata?.title) {
 				reference = await this._getObjFromReference(nftToken, nftMetadata)
 			}
 
