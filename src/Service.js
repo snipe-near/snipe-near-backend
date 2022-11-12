@@ -138,9 +138,7 @@ class Service {
 				activity.data.snipeId,
 				{
 					status: activity.data.status,
-					_meta: {
-						buyReceiptId: activity.receiptId,
-					},
+					buyReceiptId: activity.receiptId,
 				}
 			)
 
