@@ -46,6 +46,9 @@ class Repository {
 			.find({
 				accountId,
 			})
+			.sort({
+				createdAt: -1,
+			})
 			.skip(skip)
 			.limit(limit)
 			.toArray()
@@ -166,7 +169,22 @@ class Repository {
 				},
 				status: snipeStatusEnum.waiting,
 			})
+			.sort({
+				createdAt: -1,
+			})
 			.toArray()
+	}
+
+	async getQueueNumberAutoBuy(contractId, tokenId, datetime) {
+		return await this.snipesDb.count({
+			contractId,
+			tokenId,
+			status: snipeStatusEnum.waiting,
+			isAutoBuy: true,
+			createdAt: {
+				$lt: datetime,
+			},
+		})
 	}
 
 	async setSnipeStatus(id, status) {

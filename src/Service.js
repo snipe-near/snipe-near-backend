@@ -84,6 +84,7 @@ class Service {
 	}
 
 	async _getSnipesGreaterOrEqualPrice(contractId, tokenId, price) {
+		//TODO optimize search mechanism
 		//TODO search snipes by collection
 		return await this.repo.getSnipesGreaterOrEqualPrice(contractId, tokenId, price)
 	}
@@ -103,8 +104,17 @@ class Service {
 			snipeStatusEnum.sniping
 		)
 
+		// when the snipe is autobuy, it's only needed to add the first snipe to the queue
+		let isAutoBuyHasBeenAdded = false
 		for (const snipe of snipes) {
+			if (!snipe.isAutoBuy) {
+				await this.snipeQueue.add({ snipe, activity })
+				continue
+			}
+
+			if (isAutoBuyHasBeenAdded === true) continue
 			await this.snipeQueue.add({ snipe, activity })
+			isAutoBuyHasBeenAdded = true
 		}
 	}
 
@@ -139,18 +149,13 @@ class Service {
 		}
 
 		if (activity.type === activityTypeEnum.buyToken) {
-			const nftData = await this._getDeepNftData(body.contractId, body.tokenId)
-
 			await this.repo.updateSnipeByExternalIdWithSession(
 				session,
 				activity.data.accountId,
 				activity.data.snipeId,
 				{
 					status: activity.data.status,
-					_meta: {
-						buyReceiptId: activity.receiptId,
-						...nftData,
-					},
+					buyReceiptId: activity.receiptId,
 				}
 			)
 
@@ -224,7 +229,7 @@ class Service {
 		const dataLowerCase = data.toLowerCase()
 		if (dataLowerCase.includes('http://') || dataLowerCase.includes('https://')) {
 			if (dataLowerCase.includes('ipfs.io/ipfs')) {
-				return data.replace('ipfs.io/ipfs', 'cloudflare-ipfs.com/ipfs')
+				return data.replace('ipfs.io/ipfs', 'snipenear.infura-ipfs.io/ipfs')
 			}
 			return data
 		}
@@ -241,7 +246,7 @@ class Service {
 			hash = new CID(ipfsSplit[1]).toString()
 		}
 
-		return `https://cloudflare-ipfs.com/ipfs/${hash}`
+		return `https://snipenear.infura-ipfs.io/ipfs/${hash}`
 	}
 
 	_getObjFromExtra(extra) {
@@ -326,7 +331,12 @@ class Service {
 				this.repo.viewNftMetadata(contractId),
 			])
 
-			const reference = await this._getObjFromReference(nftToken, nftMetadata)
+			// TODO hack, only get reference when the media is not exist
+			let reference = {}
+			if (!nftToken?.metadata?.media || !nftToken?.metadata?.title) {
+				reference = await this._getObjFromReference(nftToken, nftMetadata)
+			}
+
 			const extra = this._getObjFromExtra(nftToken.metadata?.extra)
 			const metadata = {
 				...this._omitNull(reference),
@@ -362,12 +372,20 @@ class Service {
 				strict: true,
 			}
 		)
-		const nftData = await this._getDeepNftData(contractId, tokenId)
+
+		const currentDateTime = new Date().getTime()
+		const [nftData, queueNumber] = await Promise.all([
+			this._getDeepNftData(contractId, tokenId),
+			this.repo.getQueueNumberAutoBuy(contractId, tokenId, currentDateTime),
+		])
 		if (!nftData) {
 			throw new Error('errors.nft error or invalid')
 		}
 
-		return nftData
+		return {
+			...nftData,
+			queueNumber,
+		}
 	}
 
 	async snipe(accountId, body) {
@@ -407,10 +425,25 @@ class Service {
 	}
 
 	async getSnipes(accountId, skip = 0, limit = 30) {
-		const [results, count] = await Promise.all([
+		let [results, count] = await Promise.all([
 			this.repo.getSnipes(accountId, skip, limit),
 			this.repo.countSnipe(accountId),
 		])
+
+		results = await Promise.all(
+			results.map(async (result) => {
+				if (!result.isAutoBuy || result.status !== snipeStatusEnum.waiting) {
+					return result
+				}
+
+				result.queueNumberAutoBuy = await this.repo.getQueueNumberAutoBuy(
+					result.contractId,
+					result.tokenId,
+					result.createdAt
+				)
+				return result
+			})
+		)
 
 		return {
 			data: results,
