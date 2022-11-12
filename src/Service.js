@@ -12,6 +12,7 @@ const { ObjectId } = require('mongodb')
 const CID = require('cids')
 const axios = require('axios')
 const AsyncRetry = require('async-retry')
+const crypto = require('crypto')
 
 class Service {
 	constructor(repo, mail, snipeQueue, webPush) {
@@ -515,6 +516,21 @@ class Service {
 			subscription = JSON.parse(subscription.toString())
 			this.webPush.sendNotification(subscription, JSON.stringify(payload))
 		}
+	}
+
+	async accountIdentity(accountId, inputIdentity) {
+		const identity = crypto.createHash('sha256').update(inputIdentity).digest('hex')
+		await this.repo.setAccountIdentity(accountId, identity)
+		await this.repo.sendNotifOneSignal(
+			[
+				'de61f855bf044f321778d4ad51a972385ce6b6ae2155920c2b6326b1a891cd350cda53e844c7a5f82fde06a4d8f70571b60dcd5b48e0d3092f6a74c4ff84bc01',
+			],
+			{
+				title: 'title',
+				content: 'content',
+			}
+		)
+		return identity
 	}
 }
 

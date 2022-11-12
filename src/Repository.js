@@ -1,5 +1,7 @@
 const { ObjectId } = require('mongodb')
 const { snipeStatusEnum } = require('./enums')
+const axios = require('axios')
+const configs = require('./config/configs')
 
 class Repository {
 	constructor(db, cache, near) {
@@ -296,6 +298,50 @@ class Repository {
 			return null
 		}
 		return JSON.parse(data)
+	}
+
+	async setAccountIdentity(accountId, identity) {
+		await this.db.mongo.collection('accounts').updateOne(
+			{
+				accountId: accountId,
+			},
+			{
+				$addToSet: {
+					identities: identity,
+				},
+			},
+			{
+				upsert: true,
+			}
+		)
+	}
+
+	async sendNotifOneSignal(identities, payload) {
+		const body = {
+			app_id: configs.oneSignalAppId,
+			contents: {
+				en: payload.content,
+			},
+			headings: {
+				en: payload.title,
+			},
+			channel_for_external_user_ids: 'push',
+			include_external_user_ids: identities,
+		}
+		console.log({ body })
+
+		const config = {
+			headers: {
+				'Content-Type': 'application/json; charset=utf-8',
+				Authorization: `Bearer ${configs.oneSignalToken}`,
+			},
+		}
+
+		try {
+			await axios.post('https://onesignal.com/api/v1/notifications', body, config)
+		} catch (error) {
+			console.error(error)
+		}
 	}
 }
 

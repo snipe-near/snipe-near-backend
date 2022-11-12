@@ -18,4 +18,6 @@ module.exports = {
 	snipeNearContractId: process.env.SNIPE_NEAR_CONTRACT_ID,
 	snipeNearPublicKey: process.env.SNIPE_NEAR_PUBLIC_KEY,
 	snipeNearPrivateKey: process.env.SNIPE_NEAR_PRIVATE_KEY,
+	oneSignalAppId: process.env.ONE_SIGNAL_APP_ID,
+	oneSignalToken: process.env.ONE_SIGNAL_TOKEN,
 }
