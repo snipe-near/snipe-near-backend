@@ -353,12 +353,20 @@ class Service {
 				strict: true,
 			}
 		)
-		const nftData = await this._getDeepNftData(contractId, tokenId)
+
+		const currentDateTime = new Date().getTime()
+		const [nftData, queueNumber] = await Promise.all([
+			this._getDeepNftData(contractId, tokenId),
+			this.repo.getQueueNumberAutoBuy(contractId, tokenId, currentDateTime),
+		])
 		if (!nftData) {
 			throw new Error('errors.nft error or invalid')
 		}
 
-		return nftData
+		return {
+			...nftData,
+			queueNumber,
+		}
 	}
 
 	async snipe(accountId, body) {
@@ -398,10 +406,25 @@ class Service {
 	}
 
 	async getSnipes(accountId, skip = 0, limit = 30) {
-		const [results, count] = await Promise.all([
+		let [results, count] = await Promise.all([
 			this.repo.getSnipes(accountId, skip, limit),
 			this.repo.countSnipe(accountId),
 		])
+
+		results = await Promise.all(
+			results.map(async (result) => {
+				if (!result.isAutoBuy || result.status !== snipeStatusEnum.waiting) {
+					return result
+				}
+
+				result.queueNumberAutoBuy = await this.repo.getQueueNumberAutoBuy(
+					result.contractId,
+					result.tokenId,
+					result.createdAt
+				)
+				return result
+			})
+		)
 
 		return {
 			data: results,
