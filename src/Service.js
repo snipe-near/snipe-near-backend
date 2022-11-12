@@ -302,7 +302,12 @@ class Service {
 				this.repo.viewNftMetadata(contractId),
 			])
 
-			const reference = await this._getObjFromReference(nftToken, nftMetadata)
+			// TODO hack, only get reference when the media is not exist
+			let reference = {}
+			if (!nftToken?.metadata?.media) {
+				reference = await this._getObjFromReference(nftToken, nftMetadata)
+			}
+
 			const extra = this._getObjFromExtra(nftToken.metadata?.extra)
 			const metadata = {
 				...this._omitNull(reference),
