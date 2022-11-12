@@ -6,6 +6,7 @@ const {
 } = require('./validator')
 const { utils } = require('near-api-js')
 const snipeTokenEmailTemplate = require('./email-templates/emailToken')
+const snipeTokenAutoBuyEmailTemplate = require('./email-templates/emailTokenAutoBuy')
 const { snipeStatusEnum, activityTypeEnum } = require('./enums')
 const { ObjectId } = require('mongodb')
 const CID = require('cids')
@@ -44,7 +45,7 @@ class Service {
 	async _sendEmail(to, subject, html) {
 		await this.mail.mailgunTransport.sendMail(
 			{
-				from: '"Snipe Near" <no-reply@snipenear.xyz>',
+				from: '"EverSnipe" <no-reply@eversnipe.xyz>',
 				to,
 				subject,
 				html,
@@ -61,8 +62,24 @@ class Service {
 	}
 
 	async _sendEmailTokenSniped(toEmail, price, imgUrl, mySnipeUrl, marketplaceUrl) {
-		const subject = `Hurry Up! Checkout your Token snipe now! - [${new Date().toISOString()}]`
+		const currentDate = new Date()
+		const dateTimeUtc = `${currentDate.getUTCDate()}/${
+			currentDate.getUTCMonth() + 1
+		}/${currentDate.getUTCFullYear()} ${currentDate.getUTCHours()}:${currentDate.getUTCMinutes()}:${currentDate.getUTCSeconds()}`
+
+		const subject = `Hurry Up! Checkout your Token snipe now! - [${dateTimeUtc} UTC]`
 		const template = snipeTokenEmailTemplate(price, imgUrl, mySnipeUrl, marketplaceUrl)
+		await this._sendEmail(toEmail, subject, template)
+	}
+
+	async _sendEmailTokenSnipedAutoBuy(toEmail, imgUrl) {
+		const currentDate = new Date()
+		const dateTimeUtc = `${currentDate.getUTCDate()}/${
+			currentDate.getUTCMonth() + 1
+		}/${currentDate.getUTCFullYear()} ${currentDate.getUTCHours()}:${currentDate.getUTCMinutes()}:${currentDate.getUTCSeconds()}`
+
+		const subject = `Ayo! Check your wallet now! - [${dateTimeUtc} UTC]`
+		const template = snipeTokenAutoBuyEmailTemplate(imgUrl)
 		await this._sendEmail(toEmail, subject, template)
 	}
 
@@ -161,18 +178,22 @@ class Service {
 			// TODO get token image
 			// TODO get marketplace url by receiverId
 			// TODO get my snipe url
-			this._sendEmailTokenSniped(
-				snipe.settings?.emailNotification,
-				snipe._meta?.formatNearAmount,
-				snipe._meta?.mediaUrl,
-				'https://google.com',
-				'https://google.com'
-			)
+			if (snipe.isAutoBuy) {
+				this._sendEmailTokenSnipedAutoBuy(snipe.settings?.emailNotification, snipe._meta?.mediaUrl)
+			} else {
+				this._sendEmailTokenSniped(
+					snipe.settings?.emailNotification,
+					snipe._meta?.formatNearAmount,
+					snipe._meta?.mediaUrl,
+					'https://eversnipe.xyz',
+					'https://eversnipe.xyz'
+				)
+			}
 		}
 
 		if (snipe.settings.enablePushNotification) {
 			this._sendWebPushNotification(snipe.accountId, {
-				title: 'Snipe Near',
+				title: 'EverSnipe',
 			})
 		}
 	}
