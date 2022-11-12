@@ -193,8 +193,14 @@ class Service {
 		}
 
 		if (snipe.settings.enablePushNotification) {
+			// TODO remove this after integration one signal
 			this._sendWebPushNotification(snipe.accountId, {
 				title: 'EverSnipe',
+			})
+
+			this._sendOneSignalPushNotification(snipe.accountId, {
+				title: 'EverSnipe',
+				content: 'Your token has been sniped!',
 			})
 		}
 	}
@@ -510,6 +516,7 @@ class Service {
 	async _sendWebPushNotification(accountId, payload) {
 		const account = await this.repo.getAccountByAccountId(accountId)
 		if (!account) return
+		if (!Array.isArray(account.webPushSubcriptions)) return
 
 		for (let subscription of account.webPushSubcriptions) {
 			subscription = new Buffer.from(subscription, 'base64')
@@ -518,18 +525,17 @@ class Service {
 		}
 	}
 
+	async _sendOneSignalPushNotification(accountId, payload) {
+		const account = await this.repo.getAccountByAccountId(accountId)
+		if (!account) return
+		if (!Array.isArray(account.identities)) return
+
+		await this.repo.sendNotifOneSignal(account.identities, payload)
+	}
+
 	async accountIdentity(accountId, inputIdentity) {
 		const identity = crypto.createHash('sha256').update(inputIdentity).digest('hex')
 		await this.repo.setAccountIdentity(accountId, identity)
-		await this.repo.sendNotifOneSignal(
-			[
-				'de61f855bf044f321778d4ad51a972385ce6b6ae2155920c2b6326b1a891cd350cda53e844c7a5f82fde06a4d8f70571b60dcd5b48e0d3092f6a74c4ff84bc01',
-			],
-			{
-				title: 'title',
-				content: 'content',
-			}
-		)
 		return identity
 	}
 }

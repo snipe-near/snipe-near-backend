@@ -328,7 +328,6 @@ class Repository {
 			channel_for_external_user_ids: 'push',
 			include_external_user_ids: identities,
 		}
-		console.log({ body })
 
 		const config = {
 			headers: {
