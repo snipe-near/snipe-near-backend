@@ -193,11 +193,6 @@ class Service {
 		}
 
 		if (snipe.settings.enablePushNotification) {
-			// TODO remove this after integration one signal
-			this._sendWebPushNotification(snipe.accountId, {
-				title: 'EverSnipe',
-			})
-
 			this._sendOneSignalPushNotification(snipe.accountId, {
 				title: 'EverSnipe',
 				content: 'Your token has been sniped!',
