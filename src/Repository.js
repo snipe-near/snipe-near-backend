@@ -316,6 +316,19 @@ class Repository {
 		)
 	}
 
+	async removeAccountIdentity(accountId, identity) {
+		await this.db.mongo.collection('accounts').updateOne(
+			{
+				accountId: accountId,
+			},
+			{
+				$pull: {
+					identities: identity,
+				},
+			}
+		)
+	}
+
 	async sendNotifOneSignal(identities, payload) {
 		const body = {
 			app_id: configs.oneSignalAppId,

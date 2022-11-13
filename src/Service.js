@@ -538,6 +538,12 @@ class Service {
 		await this.repo.setAccountIdentity(accountId, identity)
 		return identity
 	}
+
+	async removeAccountIdentity(accountId, inputIdentity) {
+		const identity = crypto.createHash('sha256').update(inputIdentity).digest('hex')
+		await this.repo.removeAccountIdentity(accountId, identity)
+		return identity
+	}
 }
 
 module.exports = Service

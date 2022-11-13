@@ -192,6 +192,24 @@ const main = async () => {
 		}
 	})
 
+	server.post('/remove-account-identity', authorizeNear(near), async (req, res) => {
+		try {
+			const accountId = req.account_id
+			const inputIdentity = req.headers.authorization
+
+			await service.removeAccountIdentity(accountId, inputIdentity)
+			res.json({
+				status: 1,
+			})
+		} catch (error) {
+			const message = error.message || err
+			res.status(500).json({
+				status: 0,
+				message: message,
+			})
+		}
+	})
+
 	server.get('/test-send-notif', authorizeNear(near), async (req, res) => {
 		try {
 			const accountId = req.account_id
