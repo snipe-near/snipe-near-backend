@@ -99,21 +99,17 @@ class Service {
 			parseFloat(utils.format.formatNearAmount(activity.data.price))
 		)
 
-		await this.repo.setSnipesStatusWithSession(
-			session,
-			snipes.map((snipe) => snipe._id),
-			snipeStatusEnum.sniping
-		)
-
 		// when the snipe is autobuy, it's only needed to add the first snipe to the queue
 		let isAutoBuyHasBeenAdded = false
 		for (const snipe of snipes) {
 			if (!snipe.isAutoBuy) {
+				await this.repo.setSnipesStatusWithSession(session, [snipe._id], snipeStatusEnum.sniping) // TODO optimize
 				await this.snipeQueue.add({ snipe, activity })
 				continue
 			}
 
 			if (isAutoBuyHasBeenAdded === true) continue
+			await this.repo.setSnipesStatusWithSession(session, [snipe._id], snipeStatusEnum.sniping) // TODO optimize
 			await this.snipeQueue.add({ snipe, activity })
 			isAutoBuyHasBeenAdded = true
 		}
