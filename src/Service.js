@@ -206,7 +206,7 @@ class Service {
 			listingActivity.data.marketplaceContractId,
 			listingActivity.data.price,
 			snipe.externalId,
-			listingActivity.data.marketplace
+			listingActivity.data.marketplaceType
 		)
 	}
 
