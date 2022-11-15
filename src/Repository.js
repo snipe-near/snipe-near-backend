@@ -253,12 +253,13 @@ class Repository {
 		})
 	}
 
-	async buyToken(marketplaceContracId, price, externalId) {
+	async buyToken(marketplaceContracId, price, externalId, marketplace) {
 		await this.near.snipeNearContract.buy_token({
 			args: {
 				marketplace_contract_id: marketplaceContracId,
-				price: price,
+				price,
 				snipe_id: externalId,
+				marketplace,
 			},
 			gas: '300000000000000', // TODO optimize gas
 		})

@@ -205,7 +205,8 @@ class Service {
 		this.repo.buyToken(
 			listingActivity.data.marketplaceContractId,
 			listingActivity.data.price,
-			snipe.externalId
+			snipe.externalId,
+			listingActivity.data.marketplace
 		)
 	}
 
