@@ -462,17 +462,17 @@ class Service {
 			throw new Error('errors.snipe is not in waiting state')
 		}
 
+		snipe.updatedAt = new Date().getTime()
+		snipe._meta.formatNearAmount = parseFloat(utils.format.formatNearAmount(body.price))
+
 		await this.repo.updateSnipe(accountId, idOrExternalId, {
+			...snipe,
 			...{
 				price: body.price,
 				settings: {
 					emailNotification: body.settings.emailNotification || null,
 					enablePushNotification: body.settings.enablePushNotification || false,
 				},
-			},
-			updatedAt: new Date().getTime(),
-			_meta: {
-				formatNearAmount: parseFloat(utils.format.formatNearAmount(body.price)),
 			},
 		})
 	}
